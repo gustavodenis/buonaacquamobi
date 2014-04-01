@@ -4,78 +4,148 @@ document.addEventListener("deviceready", onDeviceReady, false);
 // PhoneGap is ready
 function onDeviceReady() { }
 
-function strpad00(s) {
-    s = s + '';
-    if (s.length === 1) s = '0' + s;
-        return s;
+function GetName(prod) {
+    switch (prod) {
+        case "1":
+            return "Bonafont 20 Litros";
+        case "2":
+            return "Bonafont 10 Litros";
+        case "3":
+            return "Pilar 20 Litros";
+        case "4":
+            return "Pilar 10 Litros";
+    }
 }
 
-function GetTodayDate() {
-    var tdate = new Date();
-    var dd = tdate.getDate(); //yields day
-    var MM = tdate.getMonth(); //yields month
-    var yyyy = tdate.getFullYear(); //yields year
-    var xxx = dd + "/" + strpad00((MM + 1)) + "/" + yyyy;
-
-    return xxx;
+function GetPrice(prod) {
+    switch (prod) {
+        case "1":
+            return 10;
+        case "2":
+            return 8;
+        case "3":
+            return 7;
+        case "4":
+            return 5;
+    }
 }
 
-var stkViagemApp = function () { }
+var buonaAcquaApp = function () { }
 
-stkViagemApp.prototype = function () {
+buonaAcquaApp.prototype = function () {
 
-    var erro = '';
-    var _login = false,
-
+    var erro = '',
     run = function () {
 
         var that = this;
         $('#home').on('pagebeforecreate', $.proxy(_initHome, that));
-        $('#addTravelPage').on('pageshow', $.proxy(_initaddTravelPage, that));
-        $('#infoTravelPage').on('pageshow', $.proxy(_initinfoTravelPage, that));
-        $('#listTravelPage').on('pageshow', $.proxy(_initlistTravelPage, that));
+        $('#addressPage').on('pageshow', $.proxy(_initaddressPage, that));
+        $('#cartPage').on('pageshow', $.proxy(_initcartPage, that));
 
-        if (window.localStorage.getItem("userInfo") != null) {
-            _login = true;
-            $.mobile.changePage('#home', { transition: 'flip' });
-        }
-
-        $('#btnFinish').click(function () {
-            alert('Despesa Finalizada com sucesso!');
-            $.mobile.changePage('#infoResumePage', { transition: 'flip' });
+        $("#myProducts .btnCompra").on("click", function () {
+            var cart = "";
+            if (window.localStorage.getItem("cartUser") === null) {
+                cart = $(this).attr("idProduct");
+                window.localStorage.setItem("cartUser", cart);
+            }
+            else {
+                cart = window.localStorage.getItem("cartUser");
+                cart += ";" + $(this).attr("idProduct");
+                window.localStorage.setItem("cartUser", cart);
+            }
+            $('#btnViewCart').html('Carrinho de Compras (' + cart.split(";").length + ' itens!)')
         });
 
-        $('#btnAprove').click(function () {
-            alert('Despesa Aprovada com sucesso!');
-            $.mobile.changePage('#home', { transition: 'flip' });
+        $('#btnSaveContext').on("click", function () {
+            erro = '';
+            if ($('#txtCEP').val() == '')
+                erro += '- CEP\n';
+            if ($('#txtStreet').val() == '')
+                erro += '- Rua\n';
+            if ($('#txtNumber').val() == '')
+                erro += '- Número\n';
+            if ($('#txtNeighboor').val() == '')
+                erro += '- Bairro';
+            if ($('#txtCity').val() == '')
+                erro += '- Cidade';
+            if ($('#state').val() == '')
+                erro += '- Estado';
+            if ($('#txtContact').val() == '')
+                erro += '- Contato';
+
+            if (erro.length > 0) {
+                alert('Erros encontrados: ' + erro);
+            }
+            else {
+
+                fauxAjax(function () {
+                    $.post("http://www.gdtek.net/buonaAcqua/Purchase",
+                        { cep: $('#txtCEP').val(), street: $('#txtStreet').val(), number: $('#txtNumber').val(), complement: $('#txtComplement').val(), neigh: $('#txtNeighboor').val(), city: $('#txtCity').val(), state: $('#state').val(), contact: $('#txtContact').val() })
+                    .done(function (data) {
+                        var userdatatemp = { cep: $('#txtCEP').val(), street: $('#txtStreet').val(), number: $('#txtNumber').val(), complement: $('#txtComplement').val(), neigh: $('#txtNeighboor').val(), city: $('#txtCity').val(), state: $('#state').val(), contact: $('#txtContact').val() };
+                        window.localStorage.setItem("dataUser", JSON.stringify(userdatatemp));
+
+                        alert('Compra efetuada com sucesso!')
+                        $.mobile.changePage('#home', { transition: 'flip' });
+                    })
+                    .fail(function (jqXHR, textStatus, errorThrown) {
+                        alert("Request failed: " + textStatus + "," + errorThrown);
+                    });
+                }, 'finalizando compra...', this);
+            }
         });
 
-        $('#btnReject').click(function () {
-            alert('Despesa Reprovada com sucesso!');
-            $.mobile.changePage('#home', { transition: 'flip' });
+        $('#btnClean').on("click", function () {
+            window.localStorage.clear();
+            alert("Itens excluídos com sucesso!");
         });
     },
+
      _initHome = function () {
-         if (!_login) {
-             $.mobile.changePage("#logon", { transition: "flip" });
+         if (window.localStorage.getItem("cartUser") === null) {
+             $('#btnViewCart').html('Carrinho de Compras');
+         }
+         else {
+             $('#btnViewCart').html('Carrinho de Compras (' + window.localStorage.getItem("cartUser").split(";").length + ' itens!)')
          }
      },
 
-    _initaddTravelPage = function () {
-        $('#dtIni').val(GetTodayDate());
-        $('#dtFim').val(GetTodayDate());
-        $('#hrIni').val('08:00');
-        $('#hrFim').val('18:00');
+     _initaddressPage = function () {
+         var tempdata = window.localStorage.getItem("dataUser");
+         var dataJson = JSON.parse(window.localStorage.getItem("dataUser"));
+         if (tempdata != null) {
+             $('#txtCEP').val(dataJson.cep);
+             $('#txtStreet').val(dataJson.street);
+             $('#txtNumber').val(dataJson.number);
+             $('#txtComplement').val(dataJson.complement);
+             $('#txtNeighboor').val(dataJson.neigh);
+             $('#txtCity').val(dataJson.city);
+             $('#state').val(dataJson.state);
+             $('#txtContact').val(dataJson.contact);
+         }
+     },
+
+    _initcartPage = function () {
+        var cart = window.localStorage.getItem("cartUser");
+        if (cart != null) {
+            var lista = ""
+            var total = 0;
+            for (prod in cart.split(";")) {
+                lista += '<div class="ui-block-a">' + GetName(cart.split(";")[prod]) + '</div>';
+                lista += '<div class="ui-block-b">R$' + GetPrice(cart.split(";")[prod]).toFixed(2) + '</div>';
+
+                total += GetPrice(cart.split(";")[prod]);
+            }
+            $('#cartPage #listCartUser').empty();
+            $('#cartPage #listCartUser').html(lista);
+            $('#cartPage #totalPrice').html("R$" + total.toFixed(2));
+        }
+        else {
+            $('#cartPage #listCartUser').empty();
+            $('#cartPage #listCartUser').append("Nenhum registro encontrado!");
+        }
     },
 
-    _initinfoTravelPage = function () {
-
-    },
-
-    _initlistTravelPage = function () {
-
-    },
-    
     fauxAjax = function fauxAjax(func, text, thisObj) {
         $.mobile.loading('show', { theme: 'a', textVisible: true, text: text });
         window.setTimeout(function () {
