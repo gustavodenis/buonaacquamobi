@@ -65,11 +65,11 @@ buonaAcquaApp.prototype = function () {
             if ($('#txtNumber').val() == '')
                 erro += '- Número\n';
             if ($('#txtNeighboor').val() == '')
-                erro += '- Bairro';
+                erro += '- Bairro\n';
             if ($('#txtCity').val() == '')
-                erro += '- Cidade';
-            if ($('#state').val() == '')
-                erro += '- Estado';
+                erro += '- Cidade\n';
+            if ($('#state').val() == '0')
+                erro += '- Estado\n';
             if ($('#txtContact').val() == '')
                 erro += '- Contato';
 
